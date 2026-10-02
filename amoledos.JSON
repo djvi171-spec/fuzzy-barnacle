@@ -160,33 +160,6 @@
             "#000000",
             "#000000",
             "#000000"
-        ],
-        "BACKGROUND_SURFACE": [
-            "#000000"
-        ],
-        "BACKGROUND_SURFACE_HIGH": [
-            "#000000"
-        ],
-        "BACKGROUND_SURFACE_HIGHEST": [
-            "#000000"
-        ],
-        "BG_SURFACE": [
-            "#000000"
-        ],
-        "BG_SURFACE_RAISED": [
-            "#000000"
-        ],
-        "BG_SURFACE_OVERLAY": [
-            "#000000"
-        ],
-        "BACKGROUND_BASE_PRIMARY": [
-            "#000000"
-        ],
-        "BACKGROUND_BASE_SECONDARY": [
-            "#000000"
-        ],
-        "BACKGROUND_BASE_TERTIARY": [
-            "#000000"
         ]
     },
     "rawColors": {
