@@ -13,28 +13,30 @@ jobs:
       - name: Clone 3dsGamepadConnector source
         run: git clone https://github.com/Maxcimkj/3dsGamepadConnector.git repo
 
-      - name: Safe Patch & Build Setup
+      - name: Inspect and Patch Right Stick Code
         run: |
           cd repo
           # Inject Local Network permission into Info.plist
           PLIST=$(find . -name "Info.plist" | head -n 1)
           /usr/libexec/PlistBuddy -c "Add :NSLocalNetworkUsageDescription string 'Connects to 3DS InputRedirection over Wi-Fi'" "$PLIST" || true
 
-          # Safely patch right thumbstick optional unwraps with valid Swift syntax
+          # Safely patch rightThumbstick handling in Swift files with valid syntax
           python3 -c '
-          import glob
+          import glob, re
           for path in glob.glob("**/*.swift", recursive=True):
               with open(path, "r") as f:
-                  code = f.read()
+                  content = f.read()
               
-              # Replace unsafe property accesses with safe optional defaults
-              code = code.replace("rightThumbstick.xAxis.value", "(rightThumbstick?.xAxis?.value ?? 0.0)")
-              code = code.replace("rightThumbstick.yAxis.value", "(rightThumbstick?.yAxis.value ?? 0.0)")
-              code = code.replace("rightThumbstick.xAxis", "(rightThumbstick?.xAxis")
-              code = code.replace("rightThumbstick.yAxis", "(rightThumbstick?.yAxis")
-
-              with open(path, "w") as f:
-                  f.write(code)
+              if "rightThumbstick" in content:
+                  print(f"--- Found rightThumbstick in {path} ---")
+                  # Replace unsafe direct accesses with safe optional chaining and defaults
+                  content = content.replace("rightThumbstick.xAxis.value", "(rightThumbstick?.xAxis.value ?? 0.0)")
+                  content = content.replace("rightThumbstick.yAxis.value", "(rightThumbstick?.yAxis.value ?? 0.0)")
+                  content = content.replace("rightThumbstick.xAxis", "rightThumbstick?.xAxis")
+                  content = content.replace("rightThumbstick.yAxis", "rightThumbstick?.yAxis")
+                  
+                  with open(path, "w") as f:
+                      f.write(content)
           '
 
       - name: Build unsigned app
