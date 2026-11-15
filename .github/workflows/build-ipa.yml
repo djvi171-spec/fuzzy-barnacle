@@ -20,6 +20,10 @@ jobs:
           SCHEME_NAME=$(xcodebuild -list -project "$PROJ_PATH" | awk '/Schemes:/{getline; print $1}')
           echo "Building project: $PROJ_PATH with scheme: $SCHEME_NAME"
 
+          # Automatically inject Local Network permission to prevent iOS crashes
+          PLIST=$(find . -name "Info.plist" | head -n 1)
+          /usr/libexec/PlistBuddy -c "Add :NSLocalNetworkUsageDescription string 'Connects to 3DS InputRedirection over Wi-Fi'" "$PLIST" || true
+
           xcodebuild clean build \
             -project "$PROJ_PATH" \
             -scheme "$SCHEME_NAME" \
@@ -42,3 +46,4 @@ jobs:
         with:
           name: 3dsGamepadConnector-unsigned-ipa
           path: 3dsGamepadConnector.ipa
+      
