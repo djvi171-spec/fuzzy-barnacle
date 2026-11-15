@@ -13,16 +13,36 @@ jobs:
       - name: Clone 3dsGamepadConnector source
         run: git clone https://github.com/Maxcimkj/3dsGamepadConnector.git repo
 
+      - name: Patch Code for Right Stick Safety
+        run: |
+          cd repo
+          # Inject Local Network permission into Info.plist
+          PLIST=$(find . -name "Info.plist" | head -n 1)
+          /usr/libexec/PlistBuddy -c "Add :NSLocalNetworkUsageDescription string 'Connects to 3DS InputRedirection over Wi-Fi'" "$PLIST" || true
+
+          # Safely patch right thumbstick axis reads in Swift files
+          python3 -c '
+          import glob, re
+          for path in glob.glob("**/*.swift", recursive=True):
+              with open(path, "r") as f:
+                  content = f.read()
+              
+              # Safely default right stick axes to 0.0 if nil or uninitialized
+              content = content.replace("rightThumbstick.xAxis.value", "(rightThumbstick?.xAxis.value ?? 0.0)")
+              content = content.replace("rightThumbstick.yAxis.value", "(rightThumbstick?.yAxis.value ?? 0.0)")
+              content = content.replace("rightThumbstick?.xAxis.value", "(rightThumbstick?.xAxis.value ?? 0.0)")
+              content = content.replace("rightThumbstick?.yAxis.value", "(rightThumbstick?.yAxis.value ?? 0.0)")
+
+              with open(path, "w") as f:
+                  f.write(content)
+          '
+
       - name: Build unsigned app
         run: |
           cd repo
           PROJ_PATH=$(find . -name "*.xcodeproj" | head -n 1)
           SCHEME_NAME=$(xcodebuild -list -project "$PROJ_PATH" | awk '/Schemes:/{getline; print $1}')
           echo "Building project: $PROJ_PATH with scheme: $SCHEME_NAME"
-
-          # Automatically inject Local Network permission to prevent iOS crashes
-          PLIST=$(find . -name "Info.plist" | head -n 1)
-          /usr/libexec/PlistBuddy -c "Add :NSLocalNetworkUsageDescription string 'Connects to 3DS InputRedirection over Wi-Fi'" "$PLIST" || true
 
           xcodebuild clean build \
             -project "$PROJ_PATH" \
@@ -46,4 +66,3 @@ jobs:
         with:
           name: 3dsGamepadConnector-unsigned-ipa
           path: 3dsGamepadConnector.ipa
-      
