@@ -13,28 +13,26 @@ jobs:
       - name: Clone 3dsGamepadConnector source
         run: git clone https://github.com/Maxcimkj/3dsGamepadConnector.git repo
 
-      - name: Patch Code for Right Stick Safety
+      - name: Safe Patch & Build Setup
         run: |
           cd repo
           # Inject Local Network permission into Info.plist
           PLIST=$(find . -name "Info.plist" | head -n 1)
           /usr/libexec/PlistBuddy -c "Add :NSLocalNetworkUsageDescription string 'Connects to 3DS InputRedirection over Wi-Fi'" "$PLIST" || true
 
-          # Safely patch right thumbstick axis reads in Swift files
+          # Cleanly patch potential out-of-range optional unwraps in Swift files
           python3 -c '
-          import glob, re
+          import glob
           for path in glob.glob("**/*.swift", recursive=True):
               with open(path, "r") as f:
-                  content = f.read()
+                  code = f.read()
               
-              # Safely default right stick axes to 0.0 if nil or uninitialized
-              content = content.replace("rightThumbstick.xAxis.value", "(rightThumbstick?.xAxis.value ?? 0.0)")
-              content = content.replace("rightThumbstick.yAxis.value", "(rightThumbstick?.yAxis.value ?? 0.0)")
-              content = content.replace("rightThumbstick?.xAxis.value", "(rightThumbstick?.xAxis.value ?? 0.0)")
-              content = content.replace("rightThumbstick?.yAxis.value", "(rightThumbstick?.yAxis.value ?? 0.0)")
-
+              # Safely guard thumbstick axis accesses if present
+              code = code.replace("rightThumbstick.xAxis", "rightThumbstick?.xAxis")
+              code = code.replace("rightThumbstick.yAxis", "rightThumbstick?.yAxis")
+              
               with open(path, "w") as f:
-                  f.write(content)
+                  f.write(code)
           '
 
       - name: Build unsigned app
