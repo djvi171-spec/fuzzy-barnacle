@@ -3,7 +3,7 @@ name: Build Unsigned IPA
 on:
   push:
     branches: [ main ]
-  workflow_dispatch: # Allows you to trigger the build manually from the Actions tab
+  workflow_dispatch:
 
 jobs:
   build:
@@ -13,13 +13,21 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Select Xcode version
+      - name: Select Xcode
         run: sudo xcode-select -s /Applications/Xcode.app
+
+      - name: Locate Project and List Schemes
+        run: |
+          PROJECT_FILE=$(find . -name "*.xcodeproj" | head -n 1)
+          echo "Found project: $PROJECT_FILE"
+          xcodebuild -list -project "$PROJECT_FILE"
 
       - name: Build unsigned app
         run: |
+          PROJECT_FILE=$(find . -name "*.xcodeproj" | head -n 1)
+          
           xcodebuild clean build \
-            -project 3dsGamepadConnector/3dsGamepadConnector.xcodeproj \
+            -project "$PROJECT_FILE" \
             -scheme 3dsGamepadConnector \
             -configuration Release \
             -sdk iphoneos \
@@ -30,8 +38,9 @@ jobs:
 
       - name: Package into IPA
         run: |
+          APP_PATH=$(find build/Build/Products/Release-iphoneos -name "*.app" | head -n 1)
           mkdir -p Payload
-          cp -r build/Build/Products/Release-iphoneos/3dsGamepadConnector.app Payload/
+          cp -r "$APP_PATH" Payload/
           zip -r 3dsGamepadConnector.ipa Payload
 
       - name: Upload IPA artifact
